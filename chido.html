@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cifrado César y Atbash</title>
+    <style>
+        :root {
+            --bg-main: #0d1117;
+            --bg-card: #161b22;
+            --bg-input: #21262d;
+            --accent: #d2a848;
+            --accent-hover: #b8913b;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 750px;
+            width: 100%;
+        }
+
+        .pre-title {
+            color: var(--accent);
+            font-family: monospace;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            font-family: Georgia, serif;
+            font-size: 2.5em;
+            margin: 0 0 30px 0;
+            font-weight: normal;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-family: monospace;
+            color: var(--text-main);
+            margin: 0 0 10px 0;
+            font-size: 1em;
+        }
+
+        .description {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        textarea, input[type="text"], input[type="number"] {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.85em;
+        }
+
+        .btn-outline:hover { background-color: var(--border); color: var(--text-main); }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: var(--bg-main);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .btn-primary:hover { background-color: var(--accent-hover); }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-family: monospace;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--bg-input);
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+
+        .footer-note {
+            text-align: center;
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 0.8em;
+            margin-top: 40px;
+        }
+
+        .hidden { display: none; }
+        
+        .result-box {
+            background-color: var(--bg-input);
+            border: 1px dashed var(--accent);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="pre-title">Primeros pasos cifrando</div>
+    <h1>Cifrado César y Atbash</h1>
+
+    <!-- SECCIÓN 1: ALFABETO -->
+    <div class="card">
+        <h3 class="section-title">01 · Conjunto de caracteres (alfabeto de trabajo)</h3>
+        <p class="description">Define el módulo N. Puede ser el ASCII imprimible completo, un subconjunto, o símbolos. El orden define su posición.</p>
+        
+        <textarea id="alphabet" rows="2" oninput="updateModuleCount()">!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ </textarea>
+        
+        <p class="description" id="module-count">Módulo N = 95 símbolos únicos.</p>
+        
+        <div class="btn-group">
+            <button class="btn-outline" onclick="setAlphabet('ascii')">Usar ASCII imprimible (32-126)</button>
+            <button class="btn-outline" onclick="setAlphabet('es_min')">Abecedario simple (a-z)</button>
+            <button class="btn-outline" onclick="setAlphabet('es_full')">Alfanumérico Español (con Ñ)</button>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+        <div class="tab active" id="tab-cifrar" onclick="switchTab('cifrar')">Cifrar</div>
+        <div class="tab" id="tab-descifrar" onclick="switchTab('descifrar')">Descifrar</div>
+    </div>
+
+    <!-- SECCIÓN 2: CIFRAR -->
+    <div class="card" id="section-cifrar">
+        <h3 class="section-title">02 · Cifrado</h3>
+        <p class="description">Elige el método y, si es César, la clave (el desplazamiento módulo N).</p>
+
+        <div class="radio-group">
+            <label class="radio-label">
+                <input type="radio" name="method" value="cesar" checked> César
+            </label>
+            <label class="radio-label">
+                <input type="radio" name="method" value="atbash"> Atbash
+            </label>
+        </div>
+
+        <p class="description" style="margin-bottom: 5px;">Clave (desplazamiento, 1 a N-1)</p>
+        <input type="number" id="shift" value="3">
+
+        <p class="description" style="margin-bottom: 5px;">Mensaje claro</p>
+        <textarea id="inputText" rows="3" placeholder="Escribe la oración a cifrar..."></textarea>
+
+        <button class="btn-primary" onclick="encryptText()">Cifrar →</button>
+
+        <div class="result-box hidden" id="result-cifrar"></div>
+    </div>
+
+    <!-- SECCIÓN 3: DESCIFRAR (AUTOMÁTICO) -->
+    <div class="card hidden" id="section-descifrar">
+        <h3 class="section-title">02 · Descifrado Automático (Al-Kindi)</h3>
+        <p class="description">Pega el texto cifrado. El sistema usará análisis de frecuencias y diccionario para identificar el método y descifrarlo sin intervención humana.</p>
+
+        <textarea id="cipherText" rows="3" placeholder="Pega aquí el texto cifrado..."></textarea>
+
+        <button class="btn-primary" onclick="autoDecryptText()">Romper Cifrado →</button>
+
+        <div class="result-box hidden" id="result-descifrar"></div>
+    </div>
+
+    <div class="footer-note" id="footer-text">
+        Módulo activo: 95 caracteres · Cifrado/Descifrado César & Atbash
+    </div>
+</div>
+
+<script>
+    // --- Lógica de Interfaz ---
+    const presets = {
+        ascii: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+        es_min: "abcdefghijklmnopqrstuvwxyz ",
+        es_full: "ABCDEFGHIJKLMNOPQRSTUVWXYZÑabcdefghijklmnopqrstuvwxyzñ0123456789 .,!?"
+    };
+
+    function setAlphabet(type) {
+        document.getElementById('alphabet').value = presets[type];
+        updateModuleCount();
+    }
+
+    function updateModuleCount() {
+        const len = document.getElementById('alphabet').value.length;
+        document.getElementById('module-count').innerText = `Módulo N = ${len} símbolos únicos.`;
+        document.getElementById('footer-text').innerText = `Módulo activo: ${len} caracteres · Cifrado/Descifrado César & Atbash`;
+    }
+
+    function switchTab(tab) {
+        document.getElementById('tab-cifrar').classList.remove('active');
+        document.getElementById('tab-descifrar').classList.remove('active');
+        document.getElementById('section-cifrar').classList.add('hidden');
+        document.getElementById('section-descifrar').classList.add('hidden');
+
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        document.getElementById(`section-${tab}`).classList.remove('hidden');
+    }
+
+    // --- Lógica de Criptografía ---
+    function encryptCaesar(text, shift, alphabet) {
+        let result = "";
+        const N = alphabet.length;
+        for (let char of text) {
+            let index = alphabet.indexOf(char);
+            if (index === -1) { result += char; continue; }
+            // Manejo seguro del módulo para números negativos en JS
+            let newIndex = ((index + shift) % N + N) % N;
+            result += alphabet[newIndex];
+        }
+        return result;
+    }
+
+    function processAtbash(text, alphabet) {
+        let result = "";
+        for (let char of text) {
+            let index = alphabet.indexOf(char);
+            if (index === -1) { result += char; continue; }
+            let newIndex = alphabet.length - 1 - index;
+            result += alphabet[newIndex];
+        }
+        return result;
+    }
+
+    function encryptText() {
+        const text = document.getElementById("inputText").value;
+        const alphabet = document.getElementById("alphabet").value;
+        const method = document.querySelector('input[name="method"]:checked').value;
+        const shift = parseInt(document.getElementById("shift").value) || 0;
+        
+        let result = method === "cesar" ? encryptCaesar(text, shift, alphabet) : processAtbash(text, alphabet);
+        
+        const resBox = document.getElementById("result-cifrar");
+        resBox.classList.remove("hidden");
+        resBox.innerHTML = `<strong>Resultado Cifrado:</strong><br>${result}`;
+    }
+
+    // --- Algoritmo de Al-Kindi (Mejorado) ---
+    const freqTable = {
+        'e': 13.68, 'a': 12.53, 'o': 8.68, 's': 7.97, 'r': 6.87, 'n': 6.71, 'i': 6.25,
+        'd': 5.86, 'l': 4.97, 'c': 4.68, 't': 4.63, 'u': 3.93, 'm': 3.15, 'p': 2.51,
+        'b': 1.42, 'g': 1.01, 'v': 0.90, 'y': 0.90, 'q': 0.88, 'h': 0.70, 'f': 0.69,
+        'z': 0.52, 'j': 0.44, 'x': 0.22, 'w': 0.01, 'k': 0.01, 'ñ': 0.31, ' ': 15.00
+    };
+
+    // Diccionario de palabras ultra-comunes para potenciar el análisis en textos cortos
+    const commonWords = [" de ", " la ", " que ", " el ", " en ", " y ", " a ", " los ", " se ", " del ", " las ", " un ", " por ", " con ", " para ", " una ", " hola "];
+
+    function scoreText(text) {
+        let score = 0;
+        let lowerText = text.toLowerCase();
+        
+        // 1. Análisis de frecuencia pura
+        for (let char of lowerText) {
+            if (freqTable[char]) {
+                score += freqTable[char];
+            }
+        }
+
+        // 2. Multiplicador por palabras comunes (Al-Kindi avanzado)
+        // Añadimos espacios a los extremos para detectar palabras que inician o terminan la frase
+        let paddedText = " " + lowerText + " ";
+        for (let word of commonWords) {
+            let occurrences = paddedText.split(word).length - 1;
+            score += occurrences * 500; // Bonus masivo si forma palabras reales
+        }
+
+        return score;
+    }
+
+    function autoDecryptText() {
+        const text = document.getElementById("cipherText").value;
+        const alphabet = document.getElementById("alphabet").value;
+        
+        let bestScore = -1;
+        let bestText = "";
+        let bestMethod = "";
+
+        // Probar Atbash
+        let atbashAttempt = processAtbash(text, alphabet);
+        let atbashScore = scoreText(atbashAttempt);
+        if (atbashScore > bestScore) {
+            bestScore = atbashScore;
+            bestText = atbashAttempt;
+            bestMethod = "Atbash";
+        }
+
+        // Probar César (fuerza bruta + heurística)
+        for (let i = 0; i < alphabet.length; i++) {
+            let caesarAttempt = encryptCaesar(text, -i, alphabet);
+            let caesarScore = scoreText(caesarAttempt);
+            
+            if (caesarScore > bestScore) {
+                bestScore = caesarScore;
+                bestText = caesarAttempt;
+                bestMethod = `César (Clave/Módulo detectado: ${i})`;
+            }
+        }
+
+        const resBox = document.getElementById("result-descifrar");
+        resBox.classList.remove("hidden");
+        resBox.innerHTML = `
+            <span style="color:var(--text-muted)">Método identificado:</span> <strong style="color:var(--accent)">${bestMethod}</strong><br><br>
+            <span style="color:var(--text-muted)">Mensaje original:</span><br>${bestText}
+        `;
+    }
+
+    // Inicializar contador al cargar
+    updateModuleCount();
+</script>
+</body>
+</html>
