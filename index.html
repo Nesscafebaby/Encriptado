@@ -483,21 +483,10 @@
     I:6.97,J:0.15,K:0.77,L:4.03,M:2.41,N:6.75,O:7.51,P:1.93,Q:0.10,R:5.99,
     S:6.33,T:9.06,U:2.76,V:0.98,W:2.36,X:0.15,Y:1.97,Z:0.07};
 
-  // El carácter más frecuente de un texto normal en español o inglés no es
-  // una letra: es el ESPACIO (separa palabras). Es una señal estadística
-  // mucho más robusta que la frecuencia de una sola letra, especialmente
-  // en oraciones cortas, así que se incorpora al modelo de referencia
-  // cuando el espacio forma parte del alfabeto de trabajo.
+  
   var SPACE_PCT = 17; // porcentaje aproximado de espacios en texto corrido
 
-  // Construye, para un alfabeto de trabajo concreto, una tabla de
-  // frecuencias "adaptada": solo con las letras de `base` que realmente
-  // existen en ese alfabeto (para que funcione igual con un alfabeto de
-  // 27, de 26, o con cualquier subconjunto de letras elegido a mano), más
-  // el espacio si el alfabeto lo incluye. Devuelve null si el alfabeto no
-  // comparte letras suficientes con ese idioma como para que el análisis
-  // de frecuencias tenga sentido (limitación real del método de al-Kindī:
-  // sin estadísticas del idioma no hay nada contra qué comparar).
+ 
   function buildAdaptiveFreqTable(alphabet, base){
     var upperLetters = Object.create(null);
     alphabet.forEach(function(ch){
@@ -520,9 +509,7 @@
      2. UTILIDADES SOBRE EL ALFABETO
      ========================================================================== */
 
-  // Convierte el string del alfabeto en un arreglo de símbolos únicos,
-  // preservando el orden en que el usuario los escribió. Usa Array.from
-  // para no romper caracteres Unicode fuera del plano básico.
+
   function toAlphabetArray(str){
     var seen = Object.create(null);
     var out = [];
@@ -532,10 +519,7 @@
     return out;
   }
 
-  // Construye un mapa símbolo -> índice, más un mapa auxiliar que también
-  // resuelve la variante de mayúscula/minúscula cuando el símbolo es una
-  // letra (para que el usuario pueda escribir en minúsculas aunque el
-  // alfabeto esté definido en mayúsculas, y viceversa).
+ 
   function buildIndex(alphabet){
     var index = Object.create(null);
     alphabet.forEach(function(ch, i){ index[ch] = i; });
@@ -549,19 +533,7 @@
     return ch === upper ? lower : upper;
   }
 
-  // Resuelve el índice de un carácter del texto dentro del alfabeto,
-  // probando primero coincidencia EXACTA y, solo si falla, la variante de
-  // mayúscula/minúscula. Devuelve {idx, swapped} o null si el carácter no
-  // pertenece al alfabeto (en cuyo caso se copia sin cambios).
-  //
-  // El indicador `swapped` importa: si el alfabeto ya contiene 'A' y 'a'
-  // como posiciones DISTINTAS (por ejemplo, un rango ASCII contiguo que
-  // incluye ambos casos), la coincidencia es exacta y el resultado se d
-  // usa tal cual, sin forzar su caso. Solo cuando el alfabeto NO distingue
-  // casos (p. ej. "ABC...Z" sin minúsculas) se recurre a la variante, y
-  // ahí sí conviene devolver el resultado con el mismo caso que tenía el
-  // texto original, para que cifrar "hola" con alfabeto en mayúsculas no
-  // se vuelva ilegible por un cambio de caso no solicitado.
+
   function resolveIndex(ch, index){
     if(ch in index) return { idx: index[ch], swapped: false };
     var variant = caseVariant(ch);
@@ -584,8 +556,7 @@
 
   function mod(n, m){ return ((n % m) + m) % m; }
 
-  // shiftBy > 0 cifra con clave shiftBy; para descifrar se llama con
-  // shiftBy = (N - clave) mod N.
+ 
   function caesarTransform(text, alphabet, index, shiftBy){
     var N = alphabet.length;
     return Array.from(text).map(function(ch){
@@ -613,15 +584,6 @@
      4. MOTOR DE CRIPTOANÁLISIS (detección automática, "motor al-Kindī")
      ========================================================================== */
 
-  // Puntúa un texto candidato contra una tabla de frecuencias adaptada:
-  // ji-cuadrada de bondad de ajuste, NORMALIZADA por el total de símbolos
-  // contados (chi2 / total). La normalización es necesaria porque, sin
-  // ella, un candidato con muy pocas letras reconocidas puede obtener por
-  // pura casualidad un chi-cuadrada bajo (poca muestra, poco margen de
-  // error) y desplazar al candidato correcto. También se exige un mínimo
-  // de símbolos contados (MIN_SAMPLE): con menos que eso, el texto es
-  // demasiado corto para que el análisis de frecuencias sea confiable, y
-  // se descarta el candidato en vez de arriesgar una respuesta al azar.
   var MIN_SAMPLE = 8;
 
   function scoreCandidate(text, freqTable){
@@ -644,15 +606,7 @@
     return chi2 / total;
   }
 
-  // Genera TODOS los candidatos posibles (Atbash + cada clave César),
-  // evaluándolos contra DOS hipótesis de idioma (español e inglés) a la
-  // vez, y devuelve el ganador global: la combinación (método, clave,
-  // idioma) cuyo resultado se parece más a un texto real. Así el programa
-  // no solo determina el método/clave, también infiere el idioma sin que
-  // el usuario lo indique. Si ninguna de las dos tablas tiene suficiente
-  // traslape de letras con el alfabeto elegido, o si el texto es
-  // demasiado corto para cualquier candidato, se informa explícitamente
-  // en vez de fabricar una respuesta.
+ 
   function autoDecrypt(cipherText, alphabet, index){
     var tableEs = buildAdaptiveFreqTable(alphabet, BASE_FREQ_ES);
     var tableEn = buildAdaptiveFreqTable(alphabet, BASE_FREQ_EN);
@@ -715,9 +669,7 @@
     return { arr: arr, index: buildIndex(arr) };
   }
 
-  // Muestra explícitamente el código (ASCII o Unicode) de cada símbolo del
-  // alfabeto: esto es lo que hace visible que el módulo de cifrado está
-  // construido sobre el código de carácter, no sobre letras "a secas".
+
   function refreshAlphabetMeta(){
     var arr = toAlphabetArray(alphabetInput.value);
     alphabetCount.textContent = "N = " + arr.length + " símbolos → claves César válidas: 1–" + Math.max(arr.length - 1, 0);
@@ -849,12 +801,7 @@
     decryptOutput.textContent = w.text;
   });
 
-  // Inicialización: por defecto, el alfabeto es el rango ASCII imprimible
-  // (32–126, 95 símbolos), que es la base pedida por la consigna. Los
-  // chips de idioma quedan disponibles como atajo para cuando se quiera
-  // limitar el módulo a solo letras (útil, por ejemplo, para inspeccionar
-  // a mano cómo se comporta el descifrado automático sobre un alfabeto
-  // puramente lingüístico).
+ 
   buildPresetChips();
   alphabetInput.value = (function(){
     var chars = [];
